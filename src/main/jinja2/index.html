@@ -6,7 +6,7 @@
   <script>
     const runTest = function () {
       const urlInput = document.getElementById("id-input-link");
-      const url = urlInput.getAttribute("value");
+      const url = urlInput.value;
       const payload = {data: {url: url}};
 
       fetch("/", {
@@ -95,7 +95,7 @@
 <div>
   <div>
     <label for="id-input-link">Copy link of your API app and paste here:</label>
-    <input id="id-input-link" type="text" value="http://localhost:8000">
+    <input id="id-input-link" type="text">
     <button class="mt-2 btn btn-danger" id="id-button-run-tests">Узнать</button>
   </div>
   <div>

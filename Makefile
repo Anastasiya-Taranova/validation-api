@@ -11,7 +11,7 @@ include ./Makefile.in.mk
 # [  TARGETS  ]
 # override to whatever works on your system
 
-WSGI_APPLICATION := main.wsgi:application
+WSGI_APPLICATION := main.main:app
 LOCAL_RUN := $(PYTHON) -m main.app
 
 include ./Makefile.targets.mk
