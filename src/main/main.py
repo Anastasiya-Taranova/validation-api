@@ -1,14 +1,20 @@
 import logging
 import os
 import traceback
-from typing import Dict, List, Optional, Text, Union
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Text
+from typing import Union
 
 import requests
 import uvicorn
 import validators
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI
+from fastapi import Form
+from fastapi import Request
 from fastapi.responses import HTMLResponse
-from fastapi import FastAPI, Request, Form
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.testclient import TestClient
 
@@ -106,7 +112,7 @@ logger = configure_logging("main")
 @app.get("/", response_class=HTMLResponse)
 async def view_index(request: Request):
     logger.debug(request)
-    return templates.TemplateResponse('index.html', context={"request": request})
+    return templates.TemplateResponse("index.html", context={"request": request})
 
 
 @app.post("/")
@@ -163,11 +169,7 @@ def get_post_by_id(server: Text, new_post: int) -> Post:
 
 def generate_post_params(author: User) -> Dict:
     post = Post(author_id=author.id, content=os.urandom(8).hex())
-    params = {
-        key: value
-        for key, value in post.dict().items()
-        if value
-    }
+    params = {key: value for key, value in post.dict().items() if value}
     return params
 
 
@@ -198,12 +200,14 @@ def get_authors(server: Text) -> AllUsersT:
 def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
     post_params = post_params.dict() if isinstance(post_params, Post) else post_params
     assert "id" in post, f"post {post} does not have a key 'id'"
-    assert isinstance(post.id, int), f"post object must have an integer id, got {post.id} instead"
+    assert isinstance(
+        post.id, int
+    ), f"post object must have an integer id, got {post.id} instead"
     for attr_name, expected_value in post_params.items():
         existing_value = getattr(post, attr_name)
-        assert \
-            existing_value == expected_value, \
-            f"post.{attr_name} == {existing_value!r}, while expected {existing_value!r}"
+        assert (
+            existing_value == expected_value
+        ), f"post.{attr_name} == {existing_value!r}, while expected {existing_value!r}"
 
 
 def create_new_post(server: Text, new_post_params: Dict) -> Post:
