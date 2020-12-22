@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Validation API</title>
+    <script>
+        const runTest = function () {
+            const urlInput = document.getElementById("id-input-link");
+            const url = urlInput.getAttribute("value");
+            const payload = {data: {url: url}};
+
+            fetch("/", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            }).then(
+                response => {
+                    response.json().then(
+                        payload => {
+                            const data = payload.data;
+                            if (data) {
+                                const elmTestResults = document.getElementById("id-results");
+                                if (data.ok) {
+                                    elmTestResults.textContent = "api is ok";
+                                    elmTestResults.setAttribute("class", "ok");
+                                } else {
+                                    elmTestResults.textContent = "api is fucked up";
+                                    elmTestResults.setAttribute("class", "failed");
+
+                                    const elmTestResultsDescription = document.getElementById("id-results-description");
+                                    elmTestResultsDescription.textContent = data.description;
+                                }
+                            } else {
+                                alert("server error! " + payload.errors);
+                            }
+                        }
+                    );
+                }
+            );
+        }
+
+        const init = function() {
+            document.getElementById("id-button-run-tests").onclick = runTest;
+        }
+
+        window.onload = init;
+
+    </script>
+    <style>
+        .ok {
+            color: green;
+        }
+        .failed {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div>
+        <label for="id-input-link">Copy link of your API app and paste here:</label>
+        <input type="text" id="id-input-link" value="http://192.168.1.100:8000">
+        <button class="mt-2 btn btn-danger" id="id-button-run-tests">Узнать</button>
+    </div>
+    <div>
+        <label for="id-results-description" id="id-results"></label>
+        <p id="id-results-description"></p>
+    </div>
+</div>
+
+</body>
+</html>
