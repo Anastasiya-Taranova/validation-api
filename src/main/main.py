@@ -11,16 +11,17 @@ import requests
 import uvicorn
 import validators
 from fastapi import FastAPI
-from fastapi import Form
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.testclient import TestClient
 
+from framework import dirs
+
 app = FastAPI()
 client = TestClient(app)
-templates = Jinja2Templates(directory="jinja2")
+templates = Jinja2Templates(directory=dirs.DIR_TEMPLATES)
 API_TIMEOUT = 2
 
 
@@ -28,7 +29,7 @@ class User(BaseModel):
     id: int
 
 
-AllUsersT = List[User]
+UserList = List[User]
 
 
 class Post(BaseModel):
@@ -37,7 +38,7 @@ class Post(BaseModel):
     id: Optional[int] = None
 
 
-AllPostsT = List[Post]
+PostList = List[Post]
 
 
 class TestRequest(BaseModel):
@@ -49,19 +50,19 @@ class JsonApiObject(BaseModel):
     data: Optional[Union[Dict, List]]
 
 
-class RunTestRequest(JsonApiObject):
+class TestRequestApi(JsonApiObject):
     data: TestRequest
 
 
-class AllUsersResponse(JsonApiObject):
-    data: AllUsersT
+class UserListApi(JsonApiObject):
+    data: UserList
 
 
-class AllPostsResponse(JsonApiObject):
-    data: AllPostsT
+class PostListApi(JsonApiObject):
+    data: PostList
 
 
-class SinglePostResponse(JsonApiObject):
+class PostApi(JsonApiObject):
     data: Post
 
 
@@ -106,18 +107,19 @@ def configure_logging(logger_name: str) -> logging.Logger:
     return logger
 
 
-logger = configure_logging("main")
+LOGGER = configure_logging("main")
 
 
 @app.get("/", response_class=HTMLResponse)
 async def view_index(request: Request):
-    logger.debug(request)
     return templates.TemplateResponse("index.html", context={"request": request})
 
 
 @app.post("/")
-async def view_test(req: RunTestRequest) -> JsonApiObject:
-    logger.debug(req)
+async def view_test(
+    req: TestRequestApi,
+) -> JsonApiObject:  # TODO: use a specific API obj
+    LOGGER.debug(req)
     test_api_server = req.data.url
 
     resp = JsonApiObject()
@@ -125,14 +127,16 @@ async def view_test(req: RunTestRequest) -> JsonApiObject:
     try:
         test_post_global(test_api_server)
     except AssertionError as err:
-        resp.data = {"ok": False, "description": str(err)}
+        tb = traceback.format_exc().split("\n")
+        resp.data = {"ok": False, "description": str(err), "tb": tb}
     except (requests.Timeout, requests.ConnectionError):
-        resp.data = {"ok": False, "description": "your api is down"}
+        tb = traceback.format_exc().split("\n")
+        resp.data = {"ok": False, "description": "your api is down", "tb": tb}
     except Exception as err:
         tb = traceback.format_exc()
         resp.errors = ["our server fault", str(err), tb]
     else:
-        resp.data = {"ok": True, "description": "hemos pasado"}
+        resp.data = {"ok": True, "description": "hemos pasado", "tb": None}
 
     return resp
 
@@ -163,7 +167,7 @@ def get_post_by_id(server: Text, new_post: int) -> Post:
     response = requests.get(url, timeout=API_TIMEOUT)
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
-    posts_resp = SinglePostResponse.parse_obj(payload)
+    posts_resp = PostApi.parse_obj(payload)
     return posts_resp.data
 
 
@@ -173,36 +177,37 @@ def generate_post_params(author: User) -> Dict:
     return params
 
 
-def get_all_posts(server: Text) -> AllPostsT:
+def get_all_posts(server: Text) -> PostList:
     url = f"{server}/api/v1/blog/post/"
     response = requests.get(url, timeout=API_TIMEOUT)
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
-    posts_resp = AllPostsResponse.parse_obj(payload)
+    posts_resp = PostListApi.parse_obj(payload)
     posts = posts_resp.data
     return posts
 
 
-def validate_post_in_posts(new_post: Post, posts: AllPostsT) -> None:
+def validate_post_in_posts(new_post: Post, posts: PostList) -> None:
     assert new_post in posts
 
 
-def get_authors(server: Text) -> AllUsersT:
+def get_authors(server: Text) -> UserList:
     url = f"{server}/api/v1/user/"
     response = requests.get(url, timeout=API_TIMEOUT)
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
-    users_resp = AllUsersResponse.parse_obj(payload)
+    users_resp = UserListApi.parse_obj(payload)
     users = users_resp.data
     return users
 
 
 def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
     post_params = post_params.dict() if isinstance(post_params, Post) else post_params
-    assert "id" in post, f"post {post} does not have a key 'id'"
+
     assert isinstance(
         post.id, int
-    ), f"post object must have an integer id, got {post.id} instead"
+    ), f"post object must have an integer id, got {post.id!r} instead"
+
     for attr_name, expected_value in post_params.items():
         existing_value = getattr(post, attr_name)
         assert (
@@ -212,10 +217,11 @@ def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
 
 def create_new_post(server: Text, new_post_params: Dict) -> Post:
     url = f"{server}/api/v1/blog/post/"
-    response = requests.post(url, json=new_post_params, timeout=API_TIMEOUT)
+    request = PostApi(data=Post.parse_obj(new_post_params))
+    response = requests.post(url, json=request.dict(), timeout=API_TIMEOUT)
     assert response.status_code == 201, f"{url} does not work: {response.status_code}"
     api_response_json = response.json()
-    api_response = SinglePostResponse.parse_obj(api_response_json)
+    api_response = PostApi.parse_obj(api_response_json)
     post = api_response.data
     return post
 

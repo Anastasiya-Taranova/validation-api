@@ -20,3 +20,8 @@ include ./Makefile.targets.mk
 # ---------------------------------------------------------
 # [  TARGETS  ]
 # keep your targets here
+
+.PHONY: run
+run:
+	$(RUN) uvicorn main.main:app --reload --workers 1 --port 8888
+

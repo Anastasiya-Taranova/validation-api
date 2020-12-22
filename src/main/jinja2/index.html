@@ -1,70 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Validation API</title>
-    <script>
-        const runTest = function () {
-            const urlInput = document.getElementById("id-input-link");
-            const url = urlInput.getAttribute("value");
-            const payload = {data: {url: url}};
+  <meta charset="UTF-8">
+  <title>Validation API</title>
+  <script>
+    const runTest = function () {
+      const urlInput = document.getElementById("id-input-link");
+      const url = urlInput.getAttribute("value");
+      const payload = {data: {url: url}};
 
-            fetch("/", {
-                method: "POST",
-                body: JSON.stringify(payload),
-            }).then(
-                response => {
-                    response.json().then(
-                        payload => {
-                            const data = payload.data;
-                            if (data) {
-                                const elmTestResults = document.getElementById("id-results");
-                                if (data.ok) {
-                                    elmTestResults.textContent = "api is ok";
-                                    elmTestResults.setAttribute("class", "ok");
-                                } else {
-                                    elmTestResults.textContent = "api is fucked up";
-                                    elmTestResults.setAttribute("class", "failed");
+      fetch("/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }).then(
+          response => {
+            response.json().then(
+                payload => {
+                  const data = payload.data;
 
-                                    const elmTestResultsDescription = document.getElementById("id-results-description");
-                                    elmTestResultsDescription.textContent = data.description;
-                                }
-                            } else {
-                                alert("server error! " + payload.errors);
-                            }
+                  const elmTestResults = document.getElementById("id-results");
+                  const elmTestResultsDescription = document.getElementById("id-results-description");
+                  const elmTraceback = document.getElementById("id-results-tb");
+
+                  if (data) {
+                    if (data.ok) {
+                      elmTestResults.textContent = "api is ok";
+                      elmTestResults.setAttribute("class", "ok");
+                      elmTestResultsDescription.setAttribute("hidden", true);
+                      elmTraceback.setAttribute("hidden", true);
+
+                    } else {
+
+                      elmTestResults.textContent = "api is fucked up";
+                      elmTestResults.setAttribute("class", "failed");
+                      elmTestResultsDescription.textContent = data.description;
+                      elmTestResultsDescription.removeAttribute("hidden");
+
+                      if (data.tb) {
+                        elmTraceback.removeAttribute("hidden");
+                        for (let i = 0; i < data.tb.length; i++) {
+                          const p = document.createElement("p");
+                          p.textContent = data.tb[i];
+                          elmTraceback.appendChild(p);
                         }
-                    );
+                      }
+                    }
+
+                  } else {
+                    alert("server error! " + payload.errors);
+                  }
                 }
             );
-        }
+          }
+      );
+    }
 
-        const init = function() {
-            document.getElementById("id-button-run-tests").onclick = runTest;
-        }
+    const init = function () {
+      document.getElementById("id-button-run-tests").onclick = runTest;
+    }
 
-        window.onload = init;
+    window.onload = init;
 
-    </script>
-    <style>
-        .ok {
-            color: green;
-        }
-        .failed {
-            color: red;
-        }
-    </style>
+  </script>
+  <style>
+    .verdict {
+      font-size: 10rem;
+      margin: 2rem;
+    }
+
+    .details {
+      background: #1e0026;
+      color: #ca95ff;
+      font-size: 2rem;
+      padding: 0.5rem;
+    }
+
+    .ok {
+      color: green;
+    }
+
+    .failed {
+      color: red;
+    }
+
+    .console {
+      background: #011545;
+      color: #ccffd6;
+      font-family: "Courier New", Courier, monospace;
+      padding: 2rem;
+    }
+  </style>
 </head>
 <body>
 <div>
-    <div>
-        <label for="id-input-link">Copy link of your API app and paste here:</label>
-        <input type="text" id="id-input-link" value="http://192.168.1.100:8000">
-        <button class="mt-2 btn btn-danger" id="id-button-run-tests">Узнать</button>
-    </div>
-    <div>
-        <label for="id-results-description" id="id-results"></label>
-        <p id="id-results-description"></p>
-    </div>
+  <div>
+    <label for="id-input-link">Copy link of your API app and paste here:</label>
+    <input id="id-input-link" type="text" value="http://localhost:8000">
+    <button class="mt-2 btn btn-danger" id="id-button-run-tests">Узнать</button>
+  </div>
+  <div>
+    <div class="verdict"><label for="id-results-description" id="id-results"></label></div>
+    <p class="details" hidden id="id-results-description"></p>
+    <p class="console" hidden id="id-results-tb"></p>
+  </div>
 </div>
 
 </body>
