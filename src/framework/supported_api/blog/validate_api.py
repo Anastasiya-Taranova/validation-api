@@ -1,11 +1,14 @@
 import os
 from typing import Dict
 from typing import Text
+from typing import Type
 from typing import Union
 
 import requests
 import validators
+from pydantic import BaseModel
 
+from framework.supported_api.blog.schemas.base import JsonApiObject
 from framework.supported_api.blog.schemas.posts import Post
 from framework.supported_api.blog.schemas.posts import PostApi
 from framework.supported_api.blog.schemas.posts import PostList
@@ -35,7 +38,13 @@ def test_post_global(test_api_server):
     validate_post(existing_post, new_post)
 
 
-def call_api(url: str, method: str, json=None) -> requests.Response:
+def call_api(
+    url: str,
+    method: str,
+    schema: Type[JsonApiObject],
+    json: Dict = None,
+    expected_status: int = 200,
+) -> JsonApiObject:
     meth = getattr(requests, method)
     meth_kwargs = dict(timeout=API_TIMEOUT)
 
@@ -43,16 +52,20 @@ def call_api(url: str, method: str, json=None) -> requests.Response:
         meth_kwargs["json"] = json
 
     response = meth(url, **meth_kwargs)
-    return response
+    assert (
+        response.status_code == expected_status
+    ), f"{url} does not work: {response.status_code}, expected: {expected_status}"
+    payload = response.json()
+
+    obj = schema.parse_obj(payload)
+
+    return obj
 
 
 def get_post_by_id(server: Text, new_post: int) -> Post:
     url = f"{server}/api/v1/blog/post/{new_post}"
-    response = call_api(url, "get")
-    assert response.status_code == 200, f"{url} does not work: {response.status_code}"
-    payload = response.json()
-    posts_resp = PostApi.parse_obj(payload)
-    return posts_resp.data
+    obj = call_api(url, "get", schema=PostApi)
+    return obj.data
 
 
 def generate_post_params(author: User) -> Dict:
@@ -63,12 +76,8 @@ def generate_post_params(author: User) -> Dict:
 
 def get_all_posts(server: Text) -> PostList:
     url = f"{server}/api/v1/blog/post/"
-    response = call_api(url, "get")
-    assert response.status_code == 200, f"{url} does not work: {response.status_code}"
-    payload = response.json()
-    posts_resp = PostListApi.parse_obj(payload)
-    posts = posts_resp.data
-    return posts
+    obj = call_api(url, "get", schema=PostListApi)
+    return obj.data
 
 
 def validate_post_in_posts(new_post: Post, posts: PostList) -> None:
@@ -77,12 +86,8 @@ def validate_post_in_posts(new_post: Post, posts: PostList) -> None:
 
 def get_authors(server: Text) -> UserList:
     url = f"{server}/api/v1/user/"
-    response = call_api(url, "get")
-    assert response.status_code == 200, f"{url} does not work: {response.status_code}"
-    payload = response.json()
-    users_resp = UserListApi.parse_obj(payload)
-    users = users_resp.data
-    return users
+    obj = call_api(url, "get", schema=UserListApi)
+    return obj.data
 
 
 def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
@@ -102,12 +107,10 @@ def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
 def create_new_post(server: Text, new_post_params: Dict) -> Post:
     url = f"{server}/api/v1/blog/post/"
     request = PostApi(data=Post.parse_obj(new_post_params))
-    response = call_api(url, "post", json=request.dict())
-    assert response.status_code == 201, f"{url} does not work: {response.status_code}"
-    api_response_json = response.json()
-    api_response = PostApi.parse_obj(api_response_json)
-    post = api_response.data
-    return post
+    obj = call_api(
+        url, "post", json=request.dict(), expected_status=201, schema=PostApi
+    )
+    return obj.data
 
 
 def validate_url(server) -> None:
