@@ -1,29 +1,29 @@
 version: "3.3"
 services:
-  alpha-web:
+  validation-api-web:
     build: ./
-    container_name: alpha-web
+    container_name: validation-api-web
     depends_on:
-      - alpha-db
+      - validation-api-db
     entrypoint: ["make", "wait-for-db", "run-prod"]
     environment:
       PORT: 80
-      DATABASE_URL: "postgresql://alpha:alpha@alpha-db:5432/alpha"
-    image: alpha-web
+      DATABASE_URL: "postgresql://validation-api:validation-api@validation-api-db:5432/validation-api"
+    image: validation-api-web
     ports:
       - "8888:80"
-  alpha-db:
-    container_name: alpha-db
+  validation-api-db:
+    container_name: validation-api-db
     environment:
-      POSTGRES_USER: alpha
-      POSTGRES_PASSWORD: alpha
-      POSTGRES_DB: alpha
+      POSTGRES_USER: validation-api
+      POSTGRES_PASSWORD: validation-api
+      POSTGRES_DB: validation-api
     image: postgres:13.1-alpine
     ports:
       - "5555:5432"
     restart: always
-  alpha-dba:
-    container_name: alpha-dba
+  validation-api-dba:
+    container_name: validation-api-dba
     image: adminer
     restart: always
     ports:
