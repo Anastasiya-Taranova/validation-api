@@ -1,7 +1,7 @@
 from multiprocessing import cpu_count
 
 from framework.dirs import DIR_SRC
-from framework.util.settings import get_setting
+from framework.utils.settings import get_setting
 
 _port = get_setting("PORT", 8000, convert=int)
 bind = f"0.0.0.0:{_port}"

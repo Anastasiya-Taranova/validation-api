@@ -1,4 +1,4 @@
-from framework.util.db import get_db_host
+from framework.utils.db import get_db_host
 
 
 def main():

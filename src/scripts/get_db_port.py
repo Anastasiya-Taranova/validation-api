@@ -1,4 +1,4 @@
-from framework.util.db import get_db_port
+from framework.utils.db import get_db_port
 
 
 def main():

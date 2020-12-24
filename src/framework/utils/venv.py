@@ -6,7 +6,7 @@ import sys
 
 def in_virtualenv():
     try:
-        from framework.util.settings import get_setting
+        from framework.utils.settings import get_setting
     except ImportError:
         # noinspection PyUnresolvedReferences
         from settings import get_setting
