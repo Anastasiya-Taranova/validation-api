@@ -20,6 +20,7 @@ default:
   TEMPLATE_ENGINE: "Django"
   VENV_SYNTHETIC: false
   WEB_CONCURRENCY: 0
+  API_TIMEOUT: 2
 
 
 development:

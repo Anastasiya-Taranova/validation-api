@@ -1,5 +1,7 @@
 import logging
 
+from framework.utils.settings import get_setting
+
 
 def mute_root_logger():
     root_logger = logging.getLogger()
@@ -9,7 +11,7 @@ def mute_root_logger():
 
 
 def configure_logging(logger_name: str) -> logging.Logger:
-    debug = 1
+    debug = get_setting("MODE_DEBUG")
     if isinstance(debug, str) and debug.isdigit():
         debug = int(debug)
 

@@ -13,8 +13,9 @@ from framework.supported_api.blog.schemas.posts import PostListApi
 from framework.supported_api.blog.schemas.users import User
 from framework.supported_api.blog.schemas.users import UserList
 from framework.supported_api.blog.schemas.users import UserListApi
+from framework.utils.settings import get_setting
 
-API_TIMEOUT = 2
+API_TIMEOUT = get_setting("API_TIMEOUT")
 
 
 def test_post_global(test_api_server):
@@ -34,9 +35,20 @@ def test_post_global(test_api_server):
     validate_post(existing_post, new_post)
 
 
+def call_api(url: str, method: str, json=None) -> requests.Response:
+    meth = getattr(requests, method)
+    meth_kwargs = dict(timeout=API_TIMEOUT)
+
+    if json:
+        meth_kwargs["json"] = json
+
+    response = meth(url, **meth_kwargs)
+    return response
+
+
 def get_post_by_id(server: Text, new_post: int) -> Post:
     url = f"{server}/api/v1/blog/post/{new_post}"
-    response = requests.get(url, timeout=API_TIMEOUT)
+    response = call_api(url, "get")
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
     posts_resp = PostApi.parse_obj(payload)
@@ -51,7 +63,7 @@ def generate_post_params(author: User) -> Dict:
 
 def get_all_posts(server: Text) -> PostList:
     url = f"{server}/api/v1/blog/post/"
-    response = requests.get(url, timeout=API_TIMEOUT)
+    response = call_api(url, "get")
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
     posts_resp = PostListApi.parse_obj(payload)
@@ -65,7 +77,7 @@ def validate_post_in_posts(new_post: Post, posts: PostList) -> None:
 
 def get_authors(server: Text) -> UserList:
     url = f"{server}/api/v1/user/"
-    response = requests.get(url, timeout=API_TIMEOUT)
+    response = call_api(url, "get")
     assert response.status_code == 200, f"{url} does not work: {response.status_code}"
     payload = response.json()
     users_resp = UserListApi.parse_obj(payload)
@@ -90,7 +102,7 @@ def validate_post(post: Post, post_params: Union[Dict, Post]) -> None:
 def create_new_post(server: Text, new_post_params: Dict) -> Post:
     url = f"{server}/api/v1/blog/post/"
     request = PostApi(data=Post.parse_obj(new_post_params))
-    response = requests.post(url, json=request.dict(), timeout=API_TIMEOUT)
+    response = call_api(url, "post", json=request.dict())
     assert response.status_code == 201, f"{url} does not work: {response.status_code}"
     api_response_json = response.json()
     api_response = PostApi.parse_obj(api_response_json)
