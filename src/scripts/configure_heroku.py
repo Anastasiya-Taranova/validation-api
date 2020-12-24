@@ -1,6 +1,6 @@
 import requests
 
-from framework.util.settings import get_setting
+from framework.utils.settings import get_setting
 
 API = "https://api.heroku.com/apps"
 

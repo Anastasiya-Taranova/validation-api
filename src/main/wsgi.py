@@ -1,6 +1,6 @@
 import sentry_sdk
 
-from framework.util.settings import get_setting
+from framework.utils.settings import get_setting
 
 sentry_sdk.init(get_setting("SENTRY_DSN"), traces_sample_rate=1.0)
 

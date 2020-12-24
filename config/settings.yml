@@ -1,4 +1,5 @@
 default:
+  API_TIMEOUT: 2
   DATABASE_URL: ""
   DIRS_EXCLUDED:
     - .idea

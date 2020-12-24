@@ -1,6 +1,6 @@
 from urllib.parse import urlsplit
 
-from framework.util.settings import get_setting
+from framework.utils.settings import get_setting
 
 
 def get_db_host():
