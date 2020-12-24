@@ -54,4 +54,4 @@ async def view_test(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host=get_setting("HOST"), port=get_setting("PORT"))
+    uvicorn.run(app, host="0.0.0.0", port=get_setting("PORT"))
