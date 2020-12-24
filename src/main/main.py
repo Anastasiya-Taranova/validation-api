@@ -13,6 +13,7 @@ from framework.supported_api.blog.schemas.base import JsonApiObject
 from framework.supported_api.blog.schemas.base import TestRequestApi
 from framework.supported_api.blog.validate_api import test_post_global
 from framework.utils.logging import configure_logging
+from framework.utils.settings import get_setting
 
 app = FastAPI()
 client = TestClient(app)
@@ -53,4 +54,4 @@ async def view_test(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=7070)
+    uvicorn.run(app, host=get_setting("HOST"), port=get_setting("PORT"))
